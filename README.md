@@ -19,7 +19,8 @@ brew install FullHuman/tap/orphos
 
 When releasing a new version:
 
-1. Update `version` and the version in every `url` in the formula
+1. Update the version in every `url` in the formula (Homebrew reads the
+   version of the formula from them)
 2. Update the `sha256` of each release archive from the `.sha256` files of the
    GitHub release
 3. Update the `sha256` of the source archive

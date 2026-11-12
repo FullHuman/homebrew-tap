@@ -4,7 +4,6 @@
 class Orphos < Formula
   desc "Gene prediction tool for finding protein-coding genes in microbial genomes"
   homepage "https://github.com/FullHuman/orphos"
-  version "0.5.0"
   license "GPL-3.0-or-later"
 
   on_macos do

@@ -1,41 +1,60 @@
-# Homebrew Formula for Orphos CLI
-# This formula should be placed in a homebrew-tap repository
-# Instructions for creating a tap: https://docs.brew.sh/How-to-Create-and-Maintain-a-Tap
+# typed: strict
+# frozen_string_literal: true
 
 class Orphos < Formula
   desc "Gene prediction tool for finding protein-coding genes in microbial genomes"
   homepage "https://github.com/FullHuman/orphos"
-  version "0.1.0"  # Update this with each release
   license "GPL-3.0-or-later"
 
   on_macos do
-    if Hardware::CPU.arm?
-      url "https://github.com/FullHuman/orphos/releases/download/v#{version}/orphos-cli-aarch64-darwin.tar.gz"
-      sha256 "b930fee82a5d13bbc7f1356ad752c4714ebf0def87e43d45e40972e4645a25b0"
-    else
-      url "https://github.com/FullHuman/orphos/releases/download/v#{version}/orphos-cli-x86_64-darwin.tar.gz"
-      sha256 "21da467bf29869c2e516c6733aedbe28495f203eae908af6826070c340cedcd3"
+    on_arm do
+      url "https://github.com/FullHuman/orphos/releases/download/v0.5.0/orphos-cli-aarch64-darwin.tar.gz"
+      sha256 "e38d1384549f91ddaa4006f3e372f28d31bd4f3d227a486b80c00745632299db"
+    end
+
+    # The releases have no binary for Intel Macs, so Orphos is built from
+    # the sources of the release there.
+    on_intel do
+      url "https://github.com/FullHuman/orphos/archive/refs/tags/v0.5.0.tar.gz"
+      sha256 "04c89148446a3ea174b7538210b23d62ecc617a4d26f0d320159627152a4ae50"
+
+      depends_on "rust" => :build
     end
   end
 
   on_linux do
-    if Hardware::CPU.arm?
-      url "https://github.com/FullHuman/orphos/releases/download/v#{version}/orphos-cli-aarch64-linux.tar.gz"
-      sha256 "5a75a00f9a54ba3b09042484436c2eeef3d6014cec92d2488522deb460198467"
-    else
-      url "https://github.com/FullHuman/orphos/releases/download/v#{version}/orphos-cli-x86_64-linux.tar.gz"
-      sha256 "eaa15b0fa4fe7063fe6aa16d8cf8b012b5417e1be7ecdbf6f1ce15377abddab6"
+    on_arm do
+      url "https://github.com/FullHuman/orphos/releases/download/v0.5.0/orphos-cli-aarch64-linux.tar.gz"
+      sha256 "d2498111617c07bba1813b218a42143ee94f327358ecbfa48e003cdf0f899c23"
+    end
+
+    on_intel do
+      url "https://github.com/FullHuman/orphos/releases/download/v0.5.0/orphos-cli-x86_64-linux.tar.gz"
+      sha256 "94683514c9dd328a4704673d2a0c3b99efd54863dcdb0f197a8289caf2b1c2e3"
     end
   end
 
   def install
-    bin.install "orphos-cli-aarch64-darwin" => "orphos" if Hardware::CPU.arm? && OS.mac?
-    bin.install "orphos-cli-x86_64-darwin" => "orphos" if Hardware::CPU.intel? && OS.mac?
-    bin.install "orphos-cli-aarch64-linux" => "orphos" if Hardware::CPU.arm? && OS.linux?
-    bin.install "orphos-cli-x86_64-linux" => "orphos" if Hardware::CPU.intel? && OS.linux?
+    if OS.mac? && Hardware::CPU.intel?
+      system "cargo", "install", *std_cargo_args(path: "orphos-cli")
+    else
+      # A release archive holds one file, the binary, named after its platform.
+      bin.install Dir["orphos-cli-*"].first => "orphos"
+    end
   end
 
   test do
-    assert_match "orphos", shell_output("#{bin}/orphos --version")
+    assert_match version.to_s, shell_output("#{bin}/orphos --version")
+
+    gene = "ATGAAACGCATTAGCACCACCATTACCACCACCATCACCATTACCACAGGTAACGGTGCGGGCTGA"
+    (testpath/"contigs.fasta").write <<~FASTA
+      >first
+      #{gene * 6}
+      >second
+      #{gene * 8}
+    FASTA
+    output = shell_output("#{bin}/orphos -q -p meta -f gff -i contigs.fasta")
+    assert_match "# Sequence Data: seqnum=2;", output
+    assert_match "\tCDS\t", output
   end
 end

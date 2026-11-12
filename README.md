@@ -19,7 +19,12 @@ brew install FullHuman/tap/orphos
 
 When releasing a new version:
 
-1. Download new release artifacts from GitHub
-2. Update `version` in the formula
-3. Update all `sha256` hashes from the release checksums
-4. Commit and push to the tap repository
+1. Update `version` and the version in every `url` in the formula
+2. Update the `sha256` of each release archive from the `.sha256` files of the
+   GitHub release
+3. Update the `sha256` of the source archive
+   (`https://github.com/FullHuman/orphos/archive/refs/tags/vX.Y.Z.tar.gz`),
+   which Intel Macs build from: the releases have no binary for them
+4. Check the formula: `brew style FullHuman/tap`, then `brew upgrade orphos`
+   and `brew test orphos` from a checkout of the change
+5. Commit and push to the tap repository
